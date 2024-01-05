@@ -31,7 +31,7 @@ def scoreEvaluationFunction(currentGameState: GameState):
 
 
 class MultiAgentSearchAgent(Agent):
-    def __init__(self, evalFn="scoreEvaluationFunction", depth="2", time_limit="6"):
+    def __init__(self, evalFn="scoreEvaluationFunction", depth="4", time_limit="6"):
         self.index = 0  # Pacman is always agent index 0
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
@@ -39,6 +39,36 @@ class MultiAgentSearchAgent(Agent):
 
 
 class AIAgent(MultiAgentSearchAgent):
+    def is_terminal(self, state: GameState):
+        return state.isLose() or state.isWin()
+
+    def min_value(self, state: GameState, d, alpha, beta):
+        if self.is_terminal(state) or d == self.depth:
+            return state.getScore()
+    
+        value = float("inf")
+        for action in state.getLegalActions(agentIndex=1):
+            value = min(value, self.max_value(state.generateSuccessor(agentIndex=1, action=action), d + 1, alpha, beta))
+            # if value <= alpha:
+            #     return value
+            
+            beta = min(beta, value)
+        return value
+        
+
+    def max_value(self, state: GameState, d, alpha, beta):
+        if self.is_terminal(state) or d == self.depth:
+            return state.getScore()
+    
+        value = float("-inf")
+        for action in state.getLegalActions():
+            value = max(value, self.min_value(state.generatePacmanSuccessor(action), d + 1, alpha, beta))
+            # if value >= beta:
+            #     return value
+            
+            alpha = max(alpha, value)
+        return value
+
     def getAction(self, gameState: GameState):
         """
         Here are some method calls that might be useful when implementing minimax.
@@ -60,5 +90,24 @@ class AIAgent(MultiAgentSearchAgent):
         Returns whether or not the game state is a losing state
         """
 
-        # TODO: Your code goes here
         # util.raiseNotDefined()
+
+        legal_actions = gameState.getLegalPacmanActions()
+        print(legal_actions)
+        best_action = legal_actions[0]
+        max_value = float("-inf")
+        for action in legal_actions:
+            value = self.max_value(gameState.generatePacmanSuccessor(action), 0, float("-inf"), float("inf"))
+
+            print(action, value)
+
+            if action == "Stop":
+                value -= 1
+
+            if value >= max_value:
+                max_value = value
+                best_action = action
+
+        print("DO:", best_action)
+
+        return best_action
