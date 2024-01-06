@@ -19,7 +19,7 @@ import util
 
 from game import Agent
 from pacman import GameState
-
+import heapq
 
 def scoreEvaluationFunction(currentGameState: GameState):
     """
@@ -40,10 +40,10 @@ class MultiAgentSearchAgent(Agent):
 
 
 class AIAgent(MultiAgentSearchAgent):
-    def print_grid(self, grid):
+    def print_grid(self, grid, delimeter = ''):
         for i in range(len(grid)):
             for j in range(len(grid[i])):
-                print(grid[i][j], end="")
+                print(grid[i][j], end=delimeter)
             print()
 
     def create_grid(self, state: GameState):
@@ -75,14 +75,69 @@ class AIAgent(MultiAgentSearchAgent):
     def is_terminal(self, state: GameState):
         return state.isLose() or state.isWin()
 
+    def heuristic(self, state: GameState):
+        grid = self.create_grid(state)
+        w = state.getWalls().width
+        h = state.getWalls().height
+        
+        capsules = state.getCapsules()
+        ghost_pos = state.getGhostPosition(agentIndex=1)
+        pacman_pos = state.getPacmanPosition()
+        
+        x = h - int(pacman_pos[1]) - 1
+        y = int(pacman_pos[0])
+        
+        pq = []
+        dis = [[float("inf") for i in range(w)] for j in range(h)]
+        vis = [[False for i in range(w)] for j in range(h)]
+        
+        heapq.heappush(pq, (0, (x, y)))
+        dx = [0, 1, 0, -1]
+        dy = [1, 0, -1, 0]
+        
+        while len(pq) != 0:
+            u = heapq.heappop(pq)
+            x = u[1][0]
+            y = u[1][1]
+
+            if vis[x][y]:
+                continue
+            
+            vis[x][y] = True
+            dis[x][y] = u[0]
+                
+            for i in range(4):
+                if grid[x + dx[i]][y + dy[i]] == 'G':
+                    dis[x + dx[i]][y + dy[i]] = dis[x][y] + 1
+                    
+                elif grid[x + dx[i]][y + dy[i]] != 'W':
+                    if dis[x + dx[i]][y + dy[i]] > dis[x][y] + 1:
+                        dis[x + dx[i]][y + dy[i]] = dis[x][y] + 1
+                        heapq.heappush(pq, (dis[x + dx[i]][y + dy[i]], (x + dx[i], y + dy[i])))
+                    
+        value_state = 0
+        
+        for caps in capsules:
+            value_state += 100 / (dis[h - int(caps[1]) - 1][int(caps[0])] + 0.1)
+             
+        value_state -= 100 / (dis[h - int(ghost_pos[1]) - 1][int(ghost_pos[0])] + 0.1)
+        
+        for i in range(h):
+            for j in range(w):
+                if grid[i][j] == '+': 
+                    value_state += 20 / dis[i][j]
+ 
+        return value_state
+        
+        
     def min_value(self, state: GameState, d, alpha, beta):
         if self.is_terminal(state) or d == self.depth:
-
-            return state.getScore()
+            return self.heuristic(state) + state.getScore()
 
         value = float("inf")
         for action in state.getLegalActions(agentIndex=1):
-            value = min(value, self.max_value(state.generateSuccessor(
+            tmpState = state.deepCopy()
+            value = min(value, self.max_value(tmpState.generateSuccessor(
                 agentIndex=1, action=action), d + 1, alpha, beta))
             if value <= alpha:
                 return value
@@ -92,13 +147,13 @@ class AIAgent(MultiAgentSearchAgent):
 
     def max_value(self, state: GameState, d, alpha, beta):
         if self.is_terminal(state) or d == self.depth:
-
-            return state.getScore()
+            return self.heuristic(state) + state.getScore()
 
         value = float("-inf")
         for action in state.getLegalActions():
+            tmpState = state.deepCopy()
             value = max(value, self.min_value(
-                state.generatePacmanSuccessor(action), d + 1, alpha, beta))
+                tmpState.generatePacmanSuccessor(action), d + 1, alpha, beta))
             if value >= beta:
                 return value
 
@@ -130,13 +185,15 @@ class AIAgent(MultiAgentSearchAgent):
 
         self.print_grid(self.create_grid(gameState))
         print("------------------------------------")
+        self.heuristic(gameState)
 
         legal_actions = gameState.getLegalPacmanActions()
         print(legal_actions)
         best_action = legal_actions[0]
         max_value = float("-inf")
         for action in legal_actions:
-            value = self.max_value(gameState.generatePacmanSuccessor(
+            pState = gameState.deepCopy()
+            value = self.max_value(pState.generatePacmanSuccessor(
                 action), 0, float("-inf"), float("inf"))
 
             print(action, value)
