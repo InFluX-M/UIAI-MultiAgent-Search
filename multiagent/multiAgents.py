@@ -75,7 +75,7 @@ class AIAgent(MultiAgentSearchAgent):
     def is_terminal(self, state: GameState):
         return state.isLose() or state.isWin()
 
-    def heuristic(self, state: GameState):
+    def heuristic(self, state: GameState, init_state: GameState):
         grid = self.create_grid(state)
         w = state.getWalls().width
         h = state.getWalls().height
@@ -118,42 +118,40 @@ class AIAgent(MultiAgentSearchAgent):
         value_state = 0
         
         for caps in capsules:
-            value_state += 100 / (dis[h - int(caps[1]) - 1][int(caps[0])] + 0.1)
-             
-        value_state -= 100 / (dis[h - int(ghost_pos[1]) - 1][int(ghost_pos[0])] + 0.1)
+            value_state += 10 / (dis[h - int(caps[1]) - 1][int(caps[0])] + 0.1)
         
         for i in range(h):
             for j in range(w):
                 if grid[i][j] == '+': 
-                    value_state += 20 / dis[i][j]
+                    value_state += 3 / (dis[i][j])
  
-        return value_state
+        return value_state + state.getScore()
         
         
-    def min_value(self, state: GameState, d, alpha, beta):
+    def min_value(self, state: GameState, d, alpha, beta, init_state: GameState):
         if self.is_terminal(state) or d == self.depth:
-            return self.heuristic(state) + state.getScore()
+            return self.heuristic(state, init_state)
 
         value = float("inf")
         for action in state.getLegalActions(agentIndex=1):
             tmpState = state.deepCopy()
             value = min(value, self.max_value(tmpState.generateSuccessor(
-                agentIndex=1, action=action), d + 1, alpha, beta))
+                agentIndex=1, action=action), d + 1, alpha, beta, init_state))
             if value <= alpha:
                 return value
 
             beta = min(beta, value)
         return value
 
-    def max_value(self, state: GameState, d, alpha, beta):
+    def max_value(self, state: GameState, d, alpha, beta, init_state: GameState):
         if self.is_terminal(state) or d == self.depth:
-            return self.heuristic(state) + state.getScore()
+            return self.heuristic(state, init_state)
 
         value = float("-inf")
         for action in state.getLegalActions():
             tmpState = state.deepCopy()
-            value = max(value, self.min_value(
-                tmpState.generatePacmanSuccessor(action), d + 1, alpha, beta))
+            value = max(value, self.min_value(tmpState.generateSuccessor(
+                agentIndex=0, action=action), d + 1, alpha, beta, init_state))
             if value >= beta:
                 return value
 
@@ -185,26 +183,29 @@ class AIAgent(MultiAgentSearchAgent):
 
         self.print_grid(self.create_grid(gameState))
         print("------------------------------------")
-        self.heuristic(gameState)
 
         legal_actions = gameState.getLegalPacmanActions()
         print(legal_actions)
-        best_action = legal_actions[0]
+        best_action = []
         max_value = float("-inf")
         for action in legal_actions:
             pState = gameState.deepCopy()
             value = self.max_value(pState.generatePacmanSuccessor(
-                action), 0, float("-inf"), float("inf"))
+                action), 0, float("-inf"), float("inf"), gameState)
 
             print(action, value)
 
             if action == "Stop":
                 value -= 1
 
-            if value >= max_value:
+            if value > max_value:
+                best_action = []
+                best_action.append(action)
                 max_value = value
-                best_action = action
+            elif value == max_value:
+                best_action.append(action)
+                
+        idx = random.randint(0, len(best_action) - 1)
+        print("DO:", best_action[idx])
 
-        print("DO:", best_action)
-
-        return best_action
+        return best_action[idx]
