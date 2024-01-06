@@ -14,7 +14,8 @@
 
 from util import manhattanDistance
 from game import Directions
-import random, util
+import random
+import util
 
 from game import Agent
 from pacman import GameState
@@ -39,33 +40,68 @@ class MultiAgentSearchAgent(Agent):
 
 
 class AIAgent(MultiAgentSearchAgent):
+    def print_grid(self, grid):
+        for i in range(len(grid)):
+            for j in range(len(grid[i])):
+                print(grid[i][j], end="")
+            print()
+
+    def create_grid(self, state: GameState):
+        w = state.getWalls().width
+        h = state.getWalls().height
+
+        capsules = state.getCapsules()
+        ghost_pos = state.getGhostPosition(agentIndex=1)
+        pacman_pos = state.getPacmanPosition()
+
+        grid = [[' ' for x in range(w)] for y in range(h)]
+        for i in range(h):
+            for j in range(w):
+                if state.hasFood(j, h - i - 1):
+                    grid[i][j] = '+'
+                
+                if state.hasWall(j, h - i - 1):
+                    grid[i][j] = 'W'
+
+        for caps in capsules:
+            grid[h - int(caps[1]) - 1][int(caps[0])] = '*'
+
+        grid[h - int(ghost_pos[1]) - 1][int(ghost_pos[0])] = 'G'
+
+        grid[h - int(pacman_pos[1]) - 1][int(pacman_pos[0])] = 'P'
+
+        return grid
+
     def is_terminal(self, state: GameState):
         return state.isLose() or state.isWin()
 
     def min_value(self, state: GameState, d, alpha, beta):
         if self.is_terminal(state) or d == self.depth:
+
             return state.getScore()
-    
+
         value = float("inf")
         for action in state.getLegalActions(agentIndex=1):
-            value = min(value, self.max_value(state.generateSuccessor(agentIndex=1, action=action), d + 1, alpha, beta))
-            # if value <= alpha:
-            #     return value
-            
+            value = min(value, self.max_value(state.generateSuccessor(
+                agentIndex=1, action=action), d + 1, alpha, beta))
+            if value <= alpha:
+                return value
+
             beta = min(beta, value)
         return value
-        
 
     def max_value(self, state: GameState, d, alpha, beta):
         if self.is_terminal(state) or d == self.depth:
+
             return state.getScore()
-    
+
         value = float("-inf")
         for action in state.getLegalActions():
-            value = max(value, self.min_value(state.generatePacmanSuccessor(action), d + 1, alpha, beta))
-            # if value >= beta:
-            #     return value
-            
+            value = max(value, self.min_value(
+                state.generatePacmanSuccessor(action), d + 1, alpha, beta))
+            if value >= beta:
+                return value
+
             alpha = max(alpha, value)
         return value
 
@@ -92,12 +128,16 @@ class AIAgent(MultiAgentSearchAgent):
 
         # util.raiseNotDefined()
 
+        self.print_grid(self.create_grid(gameState))
+        print("------------------------------------")
+
         legal_actions = gameState.getLegalPacmanActions()
         print(legal_actions)
         best_action = legal_actions[0]
         max_value = float("-inf")
         for action in legal_actions:
-            value = self.max_value(gameState.generatePacmanSuccessor(action), 0, float("-inf"), float("inf"))
+            value = self.max_value(gameState.generatePacmanSuccessor(
+                action), 0, float("-inf"), float("inf"))
 
             print(action, value)
 
