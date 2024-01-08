@@ -51,7 +51,7 @@ class AIAgent(MultiAgentSearchAgent):
         h = state.getWalls().height
 
         capsules = state.getCapsules()
-        ghost_pos = state.getGhostPosition(agentIndex=1)
+        ghosts = state.getGhostPositions()
         pacman_pos = state.getPacmanPosition()
 
         grid = [[' ' for x in range(w)] for y in range(h)]
@@ -66,7 +66,9 @@ class AIAgent(MultiAgentSearchAgent):
         for caps in capsules:
             grid[h - int(caps[1]) - 1][int(caps[0])] = '*'
 
-        grid[h - int(ghost_pos[1]) - 1][int(ghost_pos[0])] = 'G'
+        for ghost in ghosts:  
+            grid[h - int(ghost[1]) - 1][int(ghost[0])] = 'G'
+            
         grid[h - int(pacman_pos[1]) - 1][int(pacman_pos[0])] = 'P'
 
         return grid
@@ -80,7 +82,7 @@ class AIAgent(MultiAgentSearchAgent):
         h = state.getWalls().height
         
         capsules = state.getCapsules()
-        ghost_pos = state.getGhostPosition(agentIndex=1)
+        ghosts = state.getGhostPositions()
         pacman_pos = state.getPacmanPosition()
         
         x = h - int(pacman_pos[1]) - 1
@@ -105,42 +107,41 @@ class AIAgent(MultiAgentSearchAgent):
             vis[x][y] = True
             dis[x][y] = u[0]
                 
-            for i in range(4):
-                if grid[x + dx[i]][y + dy[i]] == 'G':
-                    dis[x + dx[i]][y + dy[i]] = dis[x][y] + 1
-                    
-                elif grid[x + dx[i]][y + dy[i]] != 'W':
+            for i in range(4):                    
+                if grid[x + dx[i]][y + dy[i]] != 'W':
                     if dis[x + dx[i]][y + dy[i]] > dis[x][y] + 1:
                         dis[x + dx[i]][y + dy[i]] = dis[x][y] + 1
-                        heapq.heappush(pq, (dis[x + dx[i]][y + dy[i]], (x + dx[i], y + dy[i])))
+                        if grid[x + dx[i]][y + dy[i]] != 'G':
+                            heapq.heappush(pq, (dis[x + dx[i]][y + dy[i]], (x + dx[i], y + dy[i])))
                     
         value_state = 0
-        
-        
-        for caps in capsules:
-            if state.getGhostState(agentIndex=1).scaredTimer > 0:
-                value_state -= 1000000000 / (pow(dis[h - int(caps[1]) - 1][int(caps[0])], 3) + 0.1)
         
         food_value = 0
         for i in range(h):
             for j in range(w):
                 if grid[i][j] == '+':
-                    food_value += 1 / (pow(dis[i][j], 3))
+                    food_value += 1 / (pow(dis[i][j], 5))
                             
-        if state.getGhostState(agentIndex=1).scaredTimer > dis[h - int(ghost_pos[1]) - 1][int(ghost_pos[0])]:
-            value_state += 10000000 / (pow(dis[h - int(ghost_pos[1]) - 1][int(ghost_pos[0])], 5) + 0.1)
-        else:
-            if dis[h - int(ghost_pos[1]) - 1][int(ghost_pos[0])] <= 3:
-                value_state -= 10000000 / (pow(dis[h - int(ghost_pos[1]) - 1][int(ghost_pos[0])], 3) + 0.1)
-            elif state.getGhostState(agentIndex=1).scaredTimer <= 0:
-                value_state += food_value
+        for ghostIdx in range(state.getNumAgents() - 1):
+            if state.getGhostState(agentIndex=ghostIdx+1).scaredTimer > dis[h - int(ghosts[ghostIdx][1]) - 1][int(ghosts[ghostIdx][0])]:
+                value_state += 500 / (pow(dis[h - int(ghosts[ghostIdx][1]) - 1][int(ghosts[ghostIdx][0])], 2) + 0.1)
+            else:
+                if dis[h - int(ghosts[ghostIdx][1]) - 1][int(ghosts[ghostIdx][0])] <= 3:
+                    value_state -= 250 / (pow(dis[h - int(ghosts[ghostIdx][1]) - 1][int(ghosts[ghostIdx][0])], 2) + 0.1)
+                elif state.getGhostState(agentIndex=ghostIdx+1).scaredTimer <= 0:
+                    value_state += food_value
         
         if state.isLose():
-            value_state -= 100000
-            
-        if state.isWin() and state.getGhostState(agentIndex=1).scaredTimer > 0:
             value_state -= 10000
             
+        if state.isWin():
+            for ghostIdx in range(state.getNumAgents() - 1):
+                if state.getGhostState(agentIndex=ghostIdx+1).scaredTimer > 0:   
+                    value_state -= 10000
+            
+            if len(capsules) > 0:
+                value_state -= 10000 / (pow(dis[h - int(capsules[0][1]) - 1][int(capsules[0][0])], 2) + 0.1)
+                        
         return state.getScore() + value_state
                
     def min_value(self, state: GameState, depth, alpha, beta, ghostIdx = 1):
