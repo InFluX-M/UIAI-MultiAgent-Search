@@ -124,10 +124,10 @@ class AIAgent(MultiAgentSearchAgent):
                             
         for ghostIdx in range(state.getNumAgents() - 1):
             if state.getGhostState(agentIndex=ghostIdx+1).scaredTimer > dis[h - int(ghosts[ghostIdx][1]) - 1][int(ghosts[ghostIdx][0])]:
-                value_state += 500 / (pow(dis[h - int(ghosts[ghostIdx][1]) - 1][int(ghosts[ghostIdx][0])], 2) + 0.1)
+                value_state += 450 / (pow(dis[h - int(ghosts[ghostIdx][1]) - 1][int(ghosts[ghostIdx][0])], 2) + 0.1)
             else:
                 if dis[h - int(ghosts[ghostIdx][1]) - 1][int(ghosts[ghostIdx][0])] <= 3:
-                    value_state -= 250 / (pow(dis[h - int(ghosts[ghostIdx][1]) - 1][int(ghosts[ghostIdx][0])], 2) + 0.1)
+                    value_state -= 300 / (pow(dis[h - int(ghosts[ghostIdx][1]) - 1][int(ghosts[ghostIdx][0])], 2) + 0.1)
                 elif state.getGhostState(agentIndex=ghostIdx+1).scaredTimer <= 0:
                     value_state += food_value
         
