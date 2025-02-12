@@ -1,8 +1,7 @@
-# Pacman AI Agent Using Minimax with Alpha-Beta Pruning
+# Pacman AI Agent in a Multi Agent Environment
 
 This repository contains an implementation of a Pacman AI agent that employs a minimax search algorithm enhanced with alpha-beta pruning. The project builds upon the classic Berkeley Pacman AI Projects and demonstrates how adversarial search techniques can be applied in a multi-agent environment. 
 
----
 
 ## Table of Contents
 - [Overview](#overview)
@@ -15,7 +14,6 @@ This repository contains an implementation of a Pacman AI agent that employs a m
 - [Group Project Information](#group-project-information)
 - [References](#references)
 
----
 
 ## Overview
 
@@ -25,7 +23,6 @@ The agent is designed to navigate a Pacman maze while balancing the dual objecti
 
 This approach provides a clear demonstration of adversarial search where multiple agents with opposing goals interact, a scenario often encountered in game-playing AI.
 
----
 
 ## Algorithm In-Depth
 
@@ -51,7 +48,6 @@ Alpha-beta pruning is incorporated to optimize the minimax search:
 
 During the recursive search, if the algorithm finds that the current branch cannot yield a better outcome than the already discovered values (i.e., if the current value is worse than α for the maximizer or better than β for the minimizer), that branch is pruned. This significantly reduces the number of nodes that need to be evaluated, thereby enhancing efficiency without sacrificing optimality.
 
----
 
 ## Heuristic Function Details
 
@@ -84,7 +80,6 @@ A crucial component of the agent's performance is its heuristic evaluation funct
 4. **Overall Evaluation:**  
    Finally, the heuristic combines these calculated values with the game’s inherent score to produce a final evaluation. This composite score drives the minimax decision-making, guiding the agent towards moves that are both immediately beneficial and strategically sound.
 
----
 
 ## Implementation Details
 
@@ -103,7 +98,6 @@ The project is implemented in Python and is structured around key classes and fu
 - **Action Selection:**  
   In the `getAction` method, Pacman iterates over all legal moves, computes the minimax value for each, and selects the action that leads to the best evaluated state. In cases where multiple actions yield the same score, one is chosen randomly to introduce variability.
 
----
 
 ## Performance Demonstration
 
@@ -119,7 +113,6 @@ The algorithm’s performance has been showcased through animated demonstrations
 
 These demonstrations highlight the robustness of the algorithm and the effectiveness of the heuristic in diverse game conditions.
 
----
 
 ## Contributors
 
@@ -132,7 +125,6 @@ This project was developed as part of a group assignment for Dr. Karshenas's Fun
 - Amirali Lotfi (Github: [@liAmirali](https://github.com/liAmirali/))
 
 
----
 
 ## References
 
